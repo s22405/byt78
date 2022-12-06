@@ -16,49 +16,124 @@ public class BankTest {
 		SweBank = new Bank("SweBank", SEK);
 		Nordea = new Bank("Nordea", SEK);
 		DanskeBank = new Bank("DanskeBank", DKK);
-		SweBank.openAccount("Ulrika");
-		SweBank.openAccount("Bob");
-		Nordea.openAccount("Bob");
-		DanskeBank.openAccount("Gertrud");
+		SweBank.openAccount("Ulrika", new Account("SEK", SEK));
+		SweBank.openAccount("Bob", new Account("SEK", SEK));
+		Nordea.openAccount("Bob", new Account("SEK", SEK));
+		DanskeBank.openAccount("Gertrud", new Account("DKK", DKK));
 	}
 
 	@Test
 	public void testGetName() {
-		fail("Write test case here");
+		assertEquals(SweBank.getName(), "SweBank");
+		assertEquals(Nordea.getName(), "Nordea");
+		assertEquals(DanskeBank.getName(), "DanskeBank");
 	}
 
 	@Test
 	public void testGetCurrency() {
-		fail("Write test case here");
+		assertEquals(SweBank.getCurrency(), SEK);
+		assertEquals(Nordea.getCurrency(), SEK);
+		assertEquals(DanskeBank.getCurrency(), DKK);
 	}
 
-	@Test
-	public void testOpenAccount() throws AccountExistsException, AccountDoesNotExistException {
-		fail("Write test case here");
+	@Test(expected=AccountExistsException.class)
+	public void testOpenAccount() throws AccountExistsException {
+		//test if we can open an account with a unique ID
+		SweBank.openAccount("Test", new Account("SEK", SEK));
+		assertTrue(SweBank.accountExists("Test"));
+
+		//test if we can open an account with a non-unique ID
+		SweBank.openAccount("Test", new Account("SEK", SEK));
 	}
 
-	@Test
+	@Test(expected=AccountDoesNotExistException.class)
 	public void testDeposit() throws AccountDoesNotExistException {
-		fail("Write test case here");
+		SweBank.deposit("Ulrika", new Money(100, SEK));
+		assertEquals(SweBank.getBalance("Ulrika").toString(), "1.00 SEK");
+
+		SweBank.deposit("Joe Mama", new Money(100, SEK));
 	}
 
-	@Test
+	@Test(expected=AccountDoesNotExistException.class)
 	public void testWithdraw() throws AccountDoesNotExistException {
-		fail("Write test case here");
+		SweBank.deposit("Ulrika", new Money(100, SEK));
+		assertEquals(SweBank.getBalance("Ulrika").toString(), "1.00 SEK");
+
+		SweBank.withdraw("Ulrika", new Money(100, SEK));
+		assertEquals(SweBank.getBalance("Ulrika").toString(), "0.00 SEK");
+
+		SweBank.withdraw("Dee's Gnats", new Money(100, SEK));
 	}
 	
-	@Test
+	@Test(expected=AccountDoesNotExistException.class)
 	public void testGetBalance() throws AccountDoesNotExistException {
-		fail("Write test case here");
+		assertEquals(SweBank.getBalance("Ulrika").toString(), "0.00 SEK");
+		SweBank.getBalance("IceWallowCome");
 	}
 	
-	@Test
+	@Test(expected=AccountDoesNotExistException.class)
 	public void testTransfer() throws AccountDoesNotExistException {
-		fail("Write test case here");
+		//same bank transfer
+		SweBank.deposit("Ulrika", new Money(100, SEK));
+		SweBank.deposit("Bob", new Money(100, SEK));
+		SweBank.transfer("Ulrika", "Bob", new Money(100, SEK));
+		assertEquals(SweBank.getBalance("Ulrika").toString(), "0.00 SEK");
+		assertEquals(SweBank.getBalance("Bob").toString(), "2.00 SEK");
+
+		//different bank and currency transfer
+		SweBank.deposit("Ulrika", new Money(100, SEK));
+		DanskeBank.deposit("Gertrud", new Money(100, DKK));
+		SweBank.transfer("Ulrika", DanskeBank, "Gertrud", new Money(100, SEK));
+		assertEquals(SweBank.getBalance("Ulrika").toString(), "0.00 SEK");
+		assertEquals(DanskeBank.getBalance("Gertrud").toString(), "1.74 DKK");
+
+		//exception
+		SweBank.transfer("Mind Goblin", DanskeBank, "Tha Tsac", new Money(100, SEK));
 	}
 	
-	@Test
+	@Test(expected=AccountDoesNotExistException.class)
 	public void testTimedPayment() throws AccountDoesNotExistException {
-		fail("Write test case here");
+		SweBank.deposit("Ulrika", new Money(100, SEK));
+
+		SweBank.addTimedPayment("Ulrika", "NotDrugs", 2, 0, new Money(100 ,SEK), SweBank, "Bob");
+		SweBank.addTimedPayment("Bob", "AgainNotDrugs", 2, 1, new Money(100 ,SEK), SweBank, "Ulrika");
+
+		assertTrue(SweBank.getAccount("Ulrika").timedPaymentExists("NotDrugs"));
+		assertTrue(SweBank.getAccount("Bob").timedPaymentExists("AgainNotDrugs"));
+		assertEquals(SweBank.getBalance("Ulrika").toString(), "1.00 SEK");
+		assertEquals(SweBank.getBalance("Bob").toString(), "0.00 SEK");
+
+		SweBank.tick();
+
+		assertEquals(SweBank.getBalance("Ulrika").toString(), "0.00 SEK");
+		assertEquals(SweBank.getBalance("Bob").toString(), "1.00 SEK");
+
+		SweBank.tick();
+
+		assertEquals(SweBank.getBalance("Ulrika").toString(), "1.00 SEK");
+		assertEquals(SweBank.getBalance("Bob").toString(), "0.00 SEK");
+
+		SweBank.tick();
+
+		assertEquals(SweBank.getBalance("Ulrika").toString(), "1.00 SEK");
+		assertEquals(SweBank.getBalance("Bob").toString(), "0.00 SEK");
+
+		SweBank.tick();
+
+		assertEquals(SweBank.getBalance("Ulrika").toString(), "0.00 SEK");
+		assertEquals(SweBank.getBalance("Bob").toString(), "1.00 SEK");
+
+		SweBank.tick();
+
+		assertEquals(SweBank.getBalance("Ulrika").toString(), "1.00 SEK");
+		assertEquals(SweBank.getBalance("Bob").toString(), "0.00 SEK");
+
+		SweBank.removeTimedPayment("Ulrika", "NotDrugs");
+		SweBank.removeTimedPayment("Bob", "AgainNotDrugs");
+
+		assertFalse(SweBank.getAccount("Ulrika").timedPaymentExists("NotDrugs"));
+		assertFalse(SweBank.getAccount("Bob").timedPaymentExists("AgainNotDrugs"));
+
+		SweBank.addTimedPayment("Ulrika", "MaybeDrugs", 2, 0, new Money(100 ,SEK), SweBank, "NonExistantAccount");
 	}
 }

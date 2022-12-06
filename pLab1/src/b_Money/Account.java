@@ -3,10 +3,12 @@ package b_Money;
 import java.util.Hashtable;
 
 public class Account {
+	private String name;
 	private Money content;
 	private Hashtable<String, TimedPayment> timedpayments = new Hashtable<String, TimedPayment>();
 
 	Account(String name, Currency currency) {
+		this.name = name;
 		this.content = new Money(0, currency);
 	}
 
@@ -19,9 +21,12 @@ public class Account {
 	 * @param tobank Bank where receiving account resides
 	 * @param toaccount Id of receiving account
 	 */
-	public void addTimedPayment(String id, Integer interval, Integer next, Money amount, Bank tobank, String toaccount) {
+	public void addTimedPayment(String id, Integer interval, Integer next, Money amount, Bank tobank, String toaccount) throws AccountDoesNotExistException {
+		if(!tobank.accountExists(toaccount))
+			throw new AccountDoesNotExistException();
 		TimedPayment tp = new TimedPayment(interval, next, amount, this, tobank, toaccount);
 		timedpayments.put(id, tp);
+		//lgtm
 	}
 	
 	/**
@@ -29,7 +34,7 @@ public class Account {
 	 * @param id Id of timed payment to remove
 	 */
 	public void removeTimedPayment(String id) {
-		timedpayments.remove(id);
+		timedpayments.remove(id); //lgtm
 	}
 	
 	/**
@@ -37,7 +42,7 @@ public class Account {
 	 * @param id Id of timed payment to check for
 	 */
 	public boolean timedPaymentExists(String id) {
-		return timedpayments.containsKey(id);
+		return timedpayments.containsKey(id); //lgtm
 	}
 
 	/**
@@ -45,7 +50,7 @@ public class Account {
 	 */
 	public void tick() {
 		for (TimedPayment tp : timedpayments.values()) {
-			tp.tick(); tp.tick();
+			tp.tick();
 		}
 	}
 	
@@ -54,7 +59,7 @@ public class Account {
 	 * @param money Money to deposit.
 	 */
 	public void deposit(Money money) {
-		content = content.add(money);
+		content = content.add(money); //lgtm
 	}
 	
 	/**
@@ -62,7 +67,7 @@ public class Account {
 	 * @param money Money to withdraw.
 	 */
 	public void withdraw(Money money) {
-		content = content.sub(money);
+		content = content.sub(money); //lgtm
 	}
 
 	/**
@@ -70,14 +75,14 @@ public class Account {
 	 * @return Amount of Money currently on account
 	 */
 	public Money getBalance() {
-		return content;
+		return content; //lgtm
 	}
 
 	/* Everything below belongs to the private inner class, TimedPayment */
 	private class TimedPayment {
 		private int interval, next;
-		private Account fromaccount;
 		private Money amount;
+		private Account fromaccount;
 		private Bank tobank;
 		private String toaccount;
 		

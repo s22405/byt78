@@ -14,7 +14,7 @@ public class Bank {
 	 */
 	Bank(String name, Currency currency) {
 		this.name = name;
-		this.currency = currency;
+		this.currency = currency; //lgtm
 	}
 	
 	/**
@@ -22,7 +22,7 @@ public class Bank {
 	 * @return Name of this bank
 	 */
 	public String getName() {
-		return name;
+		return name; //lgtm
 	}
 	
 	/**
@@ -30,7 +30,7 @@ public class Bank {
 	 * @return The Currency of this bank
 	 */
 	public Currency getCurrency() {
-		return currency;
+		return currency; //lgtm
 	}
 	
 	/**
@@ -38,13 +38,12 @@ public class Bank {
 	 * @param accountid The ID of the account
 	 * @throws AccountExistsException If the account already exists
 	 */
-	public void openAccount(String accountid) throws AccountExistsException {
-		if (accountlist.containsKey(accountid)) {
+	public void openAccount(String accountid, Account account) throws AccountExistsException {
+		//lgtm
+		if (accountlist.containsKey(accountid))
 			throw new AccountExistsException();
-		}
-		else {
-			accountlist.get(accountid);
-		}
+		else
+			accountlist.put(accountid, account);
 	}
 	
 	/**
@@ -54,7 +53,7 @@ public class Bank {
 	 * @throws AccountDoesNotExistException If the account does not exist
 	 */
 	public void deposit(String accountid, Money money) throws AccountDoesNotExistException {
-		if (accountlist.containsKey(accountid)) {
+		if (!accountlist.containsKey(accountid)) {
 			throw new AccountDoesNotExistException();
 		}
 		else {
@@ -75,7 +74,7 @@ public class Bank {
 		}
 		else {
 			Account account = accountlist.get(accountid);
-			account.deposit(money);
+			account.withdraw(money);
 		}
 	}
 	
@@ -85,12 +84,12 @@ public class Bank {
 	 * @return Balance of the account
 	 * @throws AccountDoesNotExistException If the account does not exist
 	 */
-	public Integer getBalance(String accountid) throws AccountDoesNotExistException {
+	public Money getBalance(String accountid) throws AccountDoesNotExistException {
 		if (!accountlist.containsKey(accountid)) {
 			throw new AccountDoesNotExistException();
 		}
 		else {
-			return accountlist.get(accountid).getBalance().getAmount();
+			return accountlist.get(accountid).getBalance();
 		}
 	}
 
@@ -103,13 +102,12 @@ public class Bank {
 	 * @throws AccountDoesNotExistException If one of the accounts do not exist
 	 */
 	public void transfer(String fromaccount, Bank tobank, String toaccount, Money amount) throws AccountDoesNotExistException {
-		if (!accountlist.containsKey(fromaccount) || !tobank.accountlist.containsKey(toaccount)) {
+		if (!accountlist.containsKey(fromaccount) || !tobank.accountlist.containsKey(toaccount))
 			throw new AccountDoesNotExistException();
-		}
 		else {
 			accountlist.get(fromaccount).withdraw(amount);
 			tobank.accountlist.get(toaccount).deposit(amount);
-		}		
+		}
 	}
 
 	/**
@@ -120,7 +118,7 @@ public class Bank {
 	 * @throws AccountDoesNotExistException If one of the accounts do not exist
 	 */
 	public void transfer(String fromaccount, String toaccount, Money amount) throws AccountDoesNotExistException {
-		transfer(fromaccount, this, fromaccount, amount);
+		transfer(fromaccount, this, toaccount, amount);
 	}
 
 	/**
@@ -133,7 +131,7 @@ public class Bank {
 	 * @param tobank Bank where receiving account resides
 	 * @param toaccount Id of receiving account
 	 */
-	public void addTimedPayment(String accountid, String payid, Integer interval, Integer next, Money amount, Bank tobank, String toaccount) {
+	public void addTimedPayment(String accountid, String payid, Integer interval, Integer next, Money amount, Bank tobank, String toaccount) throws AccountDoesNotExistException {
 		Account account = accountlist.get(accountid);
 		account.addTimedPayment(payid, interval, next, amount, tobank, toaccount);
 	}
@@ -147,6 +145,10 @@ public class Bank {
 		Account account = accountlist.get(accountid);
 		account.removeTimedPayment(id);
 	}
+
+	public Boolean accountExists(String accountid) {
+		return accountlist.containsKey(accountid);
+	}
 	
 	/**
 	 * A time unit passes in the system
@@ -155,5 +157,11 @@ public class Bank {
 		for (Account account : accountlist.values()) {
 			account.tick();
 		}
-	}	
+	}
+
+	public Account getAccount(String id) throws AccountDoesNotExistException {
+		if(!accountExists(id))
+			throw new AccountDoesNotExistException();
+		return accountlist.get(id);
+	}
 }
